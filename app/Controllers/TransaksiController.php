@@ -2,8 +2,11 @@
 
 namespace App\Controllers;
 
+use App\Models\UserModel;
 use App\Models\TransactionModel;
 use App\Models\TransactionDetailModel;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class TransaksiController extends BaseController
 {
@@ -29,6 +32,62 @@ class TransaksiController extends BaseController
         return view('v_keranjang', $data);
     }
 
+    function curl($endpoint, $params = '')
+{
+    $url = 'https://yourapiurl.com/api/' . $endpoint;
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Key: e45165a822b8051f6cd00b38babaa258',
+        'Content-Type: application/x-www-form-urlencoded'
+    ]);
+    $response = curl_exec($ch);
+    
+    if (curl_errno($ch)) {
+        echo 'Curl error: ' . curl_error($ch);
+    }
+    curl_close($ch);
+
+    echo '<pre>Response: ' . htmlspecialchars($response) . '</pre>'; // Debug output
+
+    return json_decode($response);
+}
+
+    public function transactionindex()
+    {
+        $transaction = $this->transaction;
+        $data['transaction'] = $this->transaction->findAll();
+        return view('v_transaksi', $data);
+    }
+    
+    public function transaction_edit($id = null)
+{
+    // Get the status from POST data
+    $status = $this->request->getPost('status');
+
+    if ($id !== null) {
+        // Find the transaction by ID
+        $transaction = $this->transaction->find($id);
+
+        if ($transaction) {
+            // Update the transaction status
+            $data = ['status' => $status];
+            $this->transaction->update($id, $data);
+
+            session()->setFlashdata('success', 'Status transaksi berhasil diubah.');
+        } else {
+            session()->setFlashdata('error', 'Transaksi tidak ditemukan.');
+        }
+    } else {
+        session()->setFlashdata('error', 'ID transaksi tidak valid.');
+    }
+
+    return redirect()->to(base_url('transaction'));
+}
+    
     public function cart_add()
     {
         $this->cart->insert(array(
@@ -196,4 +255,41 @@ class TransaksiController extends BaseController
         return redirect()->to(base_url('profile'));
     }
 }
+
+public function transaction_download()
+{
+    // Fetch all transactions
+    $transaction = $this->transaction->findAll();
+
+    // Load the view into a variable
+    $html = view('v_transaksiPDF', ['transaction' => $transaction]);
+
+    // Create a unique filename based on the current timestamp
+    $filename = date('Y-m-d-H-i-s') . '-transaction.pdf';
+
+    // Instantiate the Dompdf class
+    $dompdf = new Dompdf();
+
+    // Load HTML content
+    $dompdf->loadHtml($html);
+
+    // Set paper size and orientation
+    $dompdf->setPaper('A4', 'portrait');
+
+    // Render the HTML as PDF
+    $dompdf->render();
+
+    // Stream the generated PDF to the browser
+    $dompdf->stream($filename, [
+        'Attachment' => 1 // Set to 1 for download, 0 to display inline
+    ]);
+
+    // Uncomment below if you have issues with direct download and need to force headers
+    // header('Content-Type: application/pdf');
+    // header('Content-Disposition: attachment; filename="' . $filename . '"');
+    // header('Content-Transfer-Encoding: binary');
+    // header('Content-Length: ' . strlen($dompdf->output()));
+    // echo $dompdf->output();
+}
+
 }

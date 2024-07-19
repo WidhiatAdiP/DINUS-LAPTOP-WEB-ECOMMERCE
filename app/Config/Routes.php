@@ -28,6 +28,11 @@ $routes->group('keranjang', ['filter' => 'auth'], function ($routes) {
     $routes->get('delete/(:any)', 'TransaksiController::cart_delete/$1');
     $routes->get('clear', 'TransaksiController::cart_clear');
 });
+$routes->group('transaction', ['filter' => 'auth'], function ($routes) {
+    $routes->get('', 'TransaksiController::transactionindex');
+    $routes->post('edit/(:num)', 'TransaksiController::transaction_edit/$1');
+    $routes->get('download', 'TransaksiController::transaction_download');
+});
 
 $routes->get('checkout', 'TransaksiController::checkout', ['filter' => 'auth']);
 $routes->get('getcity', 'TransaksiController::getcity', ['filter' => 'auth']);

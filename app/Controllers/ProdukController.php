@@ -23,27 +23,63 @@ class ProdukController extends BaseController
         return view('v_produk', $data);
     }
 
-    public function create()
+//     public function create()
+// {
+//     $dataFoto = $this->request->getFile('foto');
+
+//     $dataForm = [
+//         'nama' => $this->request->getPost('nama'),
+//         'harga' => $this->request->getPost('harga'),
+//         'jumlah' => $this->request->getPost('jumlah'),
+//         'created_at' => date("Y-m-d H:i:s")
+//     ];
+
+//     if ($dataFoto->isValid()) {
+//         $fileName = $dataFoto->getRandomName();
+//         $dataForm['foto'] = $fileName;
+//         $dataFoto->move('img/', $fileName);
+//     }
+
+//     $this->product->insert($dataForm);
+
+//     return redirect('produk')->with('success', 'Data Berhasil Ditambah');
+// } 
+
+public function create()
 {
-    $dataFoto = $this->request->getFile('foto');
+    if ($this->request->getPost()) {
+        // Aturan Validasi
+        $rules = [
+            'nama' => 'required|min_length[5]',
+            'harga' => 'required|numeric',
+            'jumlah' => 'required|numeric',
+        ];
 
-    $dataForm = [
-        'nama' => $this->request->getPost('nama'),
-        'harga' => $this->request->getPost('harga'),
-        'jumlah' => $this->request->getPost('jumlah'),
-        'created_at' => date("Y-m-d H:i:s")
-    ];
+        if ($this->validate($rules)) {
+            $dataFoto = $this->request->getFile('foto');
 
-    if ($dataFoto->isValid()) {
-        $fileName = $dataFoto->getRandomName();
-        $dataForm['foto'] = $fileName;
-        $dataFoto->move('img/', $fileName);
+            $dataForm = [
+                'nama' => $this->request->getPost('nama'),
+                'harga' => $this->request->getPost('harga'),
+                'jumlah' => $this->request->getPost('jumlah'),
+                'created_at' => date("Y-m-d H:i:s")
+            ];
+
+            if ($dataFoto->isValid()) {
+                $fileName = $dataFoto->getRandomName();
+                $dataForm['foto'] = $fileName;
+                $dataFoto->move('img/', $fileName);
+                }
+
+            $this->product->insert($dataForm);
+
+            return redirect('produk')->with('success', 'Data Berhasil Ditambah');
+        } else {
+            return redirect()->back()->with('failed', $this->validator->listErrors())->withInput();
+        }
     }
-
-    $this->product->insert($dataForm);
-
-    return redirect('produk')->with('success', 'Data Berhasil Ditambah');
-} 
+    return view('v_produk'); // Ubah 'v_produk' dengan view yang sesuai untuk menambah produk
+}
 
 public function edit($id)
 {
